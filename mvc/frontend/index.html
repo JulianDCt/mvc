@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>MVC - Tareas</title>
+  <style>
+    body { font-family: Arial, sans-serif; max-width: 500px; margin: 40px auto; }
+    h1 { color: #333; }
+    input { padding: 8px; width: 70%; }
+    button { padding: 8px 12px; cursor: pointer; }
+    ul { list-style: none; padding: 0; }
+    li { display: flex; justify-content: space-between; align-items: center;
+         padding: 8px; border-bottom: 1px solid #ddd; }
+    .completada { text-decoration: line-through; color: gray; }
+  </style>
+</head>
+<body>
+
+  <h1>Lista de Tareas</h1>
+
+  <div>
+    <input type="text" id="inputTarea" placeholder="Nueva tarea...">
+    <button onclick="crearTarea()">Agregar</button>
+  </div>
+
+  <ul id="listaTareas"></ul>
+
+  <script>
+    const API = "http://localhost:5000";
+
+    async function cargarTareas() {
+      const res = await fetch(`${API}/tareas`);
+      const tareas = await res.json();
+      const lista = document.getElementById("listaTareas");
+      lista.innerHTML = "";
+      tareas.forEach(t => {
+        const li = document.createElement("li");
+        li.innerHTML = `
+          <span class="${t.completada ? 'completada' : ''}" 
+                onclick="toggleTarea(${t.id})" style="cursor:pointer">
+            ${t.titulo}
+          </span>
+          <button onclick="eliminarTarea(${t.id})">🗑️</button>
+        `;
+        lista.appendChild(li);
+      });
+    }
+
+    async function crearTarea() {
+      const titulo = document.getElementById("inputTarea").value.trim();
+      if (!titulo) return;
+      await fetch(`${API}/tareas`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ titulo })
+      });
+      document.getElementById("inputTarea").value = "";
+      cargarTareas();
+    }
+
+    async function eliminarTarea(id) {
+      await fetch(`${API}/tareas/${id}`, { method: "DELETE" });
+      cargarTareas();
+    }
+
+    async function toggleTarea(id) {
+      await fetch(`${API}/tareas/${id}/toggle`, { method: "PATCH" });
+      cargarTareas();
+    }
+
+    cargarTareas();
+  </script>
+
+</body>
+</html>
